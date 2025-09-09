@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .player-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .current-song {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .song-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .song-artist {
+            font-size: 18px;
+            opacity: 0.8;
+            margin: 5px 0;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        .btn.play {
+            width: 50px;
+            height: 50px;
+        }
+        .progress-container {
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+        .progress {
+            height: 100%;
+            background: #4CAF50;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .volume-slider {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+        .volume {
+            height: 100%;
+            background: #2196F3;
+            border-radius: 3px;
+            width: 50%;
+        }
+        .volume-btn {
+            font-size: 18px;
+        }
+        .playlist-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .playlist-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: background 0.3s ease;
+            align-items: center;
+        }
+        .playlist-item:hover, .playlist-item.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .playlist-item-info {
+            flex: 1;
+        }
+        .playlist-item-duration {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .playlist {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .autoplay-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .autoplay-toggle input {
+            width: 20px;
+            height: 20px;
+        }
+        @media (max-width: 600px) {
+            .player-container {
+                padding: 20px;
+            }
+            .song-title {
+                font-size: 20px;
+            }
+            .song-artist {
+                font-size: 16px;
+            }
+            .controls {
+                gap: 5px;
+            }
+            .btn {
+                padding: 8px 12px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <div class="current-song">
+            <h2 class="song-title" id="title">Select a song</h2>
+            <p class="song-artist" id="artist">-</p>
+            <p class="song-duration" id="duration">-</p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="prev" disabled>&larr;</button>
+            <button class="btn play" id="play">&#9654;</button>
+            <button class="btn" id="next" disabled>&rarr;</button>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <div class="time-display">
+                <span id="current-time">0:00</span>
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
+        
+        <div class="volume-container">
+            <button class="btn volume-btn" id="volume-mute">&#128263;</button>
+            <div class="volume-slider" id="volume-slider">
+                <div class="volume" id="volume"></div>
+            </div>
+        </div>
+        
+        <div class="autoplay-toggle">
+            <input type="checkbox" id="autoplay" checked>
+            <label for="autoplay">Autoplay Next</label>
+        </div>
+        
+        <div class="playlist-container">
+            <ul class="playlist" id="playlist">
+                <li class="playlist-item" data-index="0">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Bohemian Rhapsody</span> - 
+                        <span class="song-artist">Queen</span>
+                    </div>
+                    <span class="playlist-item-duration">5:55</span>
+                </li>
+                <li class="playlist-item" data-index="1">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Stairway to Heaven</span> - 
+                        <span class="song-artist">Led Zeppelin</span>
+                    </div>
+                    <span class="playlist-item-duration">8:02</span>
+                </li>
+                <li class="playlist-item" data-index="2">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Hotel California</span> - 
+                        <span class="song-artist">Eagles</span>
+                    </div>
+                    <span class="playlist-item-duration">6:30</span>
+                </li>
+                <li class="playlist-item" data-index="3">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Imagine</span> - 
+                        <span class="song-artist">John Lennon</span>
+                    </div>
+                    <span class="playlist-item-duration">3:03</span>
+                </li>
+                <li class="playlist-item" data-index="4">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Blackbird</span> - 
+                        <span class="song-artist">The Beatles</span>
+                    </div>
+                    <span class="playlist-item-duration">2:18</span>
+                </li>
+                <li class="playlist-item" data-index="5">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Dream On</span> - 
+                        <span class="song-artist">Aerosmith</span>
+                    </div>
+                    <span class="playlist-item-duration">4:26</span>
+                </li>
+                <li class="playlist-item" data-index="6">
+                    <div class="playlist-item-info">
+                        <span class="song-title">More Than Words</span> - 
+                        <span class="song-artist">Extreme</span>
+                    </div>
+                    <span class="playlist-item-duration">5:34</span>
+                </li>
+                <li class="playlist-item" data-index="7">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Girl from Mars</span> - 
+                        <span class="song-artist">Ash</span>
+                    </div>
+                    <span class="playlist-item-duration">3:31</span>
+                </li>
+                <li class="playlist-item" data-index="8">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Don't You (Forget About Me)</span> - 
+                        <span class="song-artist">Simple Minds</span>
+                    </div>
+                    <span class="playlist-item-duration">4:23</span>
+                </li>
+                <li class="playlist-item" data-index="9">
+                    <div class="playlist-item-info">
+                        <span class="song-title">Sweet Home Alabama</span> - 
+                        <span class="song-artist">Lynyrd Skynyrd</span>
+                    </div>
+                    <span class="playlist-item-duration">4:43</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <audio id="audio" preload="metadata">
+        <source src="" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <script>
+        // Note: In a real implementation, replace placeholder sources with actual MP3 URLs
+        const songs = [
+            {
+                title: "Bohemian Rhapsody",
+                artist: "Queen",
+                duration: "5:55",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "Stairway to Heaven",
+                artist: "Led Zeppelin",
+                duration: "8:02",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "Hotel California",
+                artist: "Eagles",
+                duration: "6:30",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "Imagine",
+                artist: "John Lennon",
+                duration: "3:03",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "Blackbird",
+                artist: "The Beatles",
+                duration: "2:18",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "Dream On",
+                artist: "Aerosmith",
+                duration: "4:26",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "More Than Words",
+                artist: "Extreme",
+                duration: "5:34",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "Girl from Mars",
+                artist: "Ash",
+                duration: "3:31",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "Don't You (Forget About Me)",
+                artist: "Simple Minds",
+                duration: "4:23",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            },
+            {
+                title: "Sweet Home Alabama",
+                artist: "Lynyrd Skynyrd",
+                duration: "4:43",
+                src: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" // Placeholder; real audio needed
+            }
+        ];
+
+        const audio = document.getElementById('audio');
+        const playBtn = document.getElementById('play');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const titleEl = document.getElementById('title');
+        const artistEl = document.getElementById('artist');
+        const durationEl = document.getElementById('duration');
+        const progressBar = document.getElementById('progress-bar');
+        const progress = document.getElementById('progress');
+        const currentTimeEl = document.getElementById('current-time');
+        const totalTimeEl = document.getElementById('total-time');
+        const volumeSlider = document.getElementById('volume-slider');
+        const volume = document.getElementById('volume');
+        const volumeMute = document.getElementById('volume-mute');
+        const autoplayToggle = document.getElementById('autoplay');
+        const playlistItems = document.querySelectorAll('.playlist-item');
+
+        let currentIndex = 0;
+        let isPlaying = false;
+        let previousVolume = 1;
+
+        function loadSong(index) {
+            const song = songs[index];
+            audio.src = song.src;
+            titleEl.textContent = song.title;
+            artistEl.textContent = song.artist;
+            durationEl.textContent = song.duration;
+            totalTimeEl.textContent = song.duration;
+            updatePlaylistUI();
+        }
+
+        function playSong() {
+            audio.play();
+            isPlaying = true;
+            playBtn.innerHTML = '&#10074;&#10074;';
+        }
+
+        function pauseSong() {
+            audio.pause();
+            isPlaying = false;
+            playBtn.innerHTML = '&#9654;';
+        }
+
+        function nextSong() {
+            currentIndex = (currentIndex + 1) % songs.length;
+            loadSong(currentIndex);
+            if (isPlaying) playSong();
+        }
+
+        function prevSong() {
+            currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+            loadSong(currentIndex);
+            if (isPlaying) playSong();
+        }
+
+        function updateProgress(e) {
+            const { duration, currentTime } = e.srcElement;
+            const progressPercent = (currentTime / duration) * 100;
+            progress.style.width = `${progressPercent}%`;
+            
+            const currentMinutes = Math.floor(currentTime / 60);
+            const currentSeconds = Math.floor(currentTime % 60);
+            const totalMinutes = Math.floor(duration / 60);
+            const totalSeconds = Math.floor(duration % 60);
+            
+            currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+            if (!isNaN(duration)) {
+                totalTimeEl.textContent = `${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function setProgress(e) {
+            const width = this.clientWidth;
+            const clickX = e.offsetX;
+            const duration = audio.duration;
+            audio.currentTime = (clickX / width) * duration;
+        }
+
+        function setVolume(e) {
+            const width = this.clientWidth;
+            const clickX = e.offsetX;
+            const vol = clickX / width;
+            audio.volume = vol;
+            volume.style.width = `${vol * 100}%`;
+            if (audio.muted) {
+                audio.muted = false;
+                volumeMute.innerHTML = '&#128263;';
+            }
+            previousVolume = vol;
+        }
+
+        function toggleMute() {
+            if (audio.muted) {
+                audio.muted = false;
+                volumeMute.innerHTML = '&#128263;';
+                volume.style.width = `${audio.volume * 100}%`;
+                previousVolume = audio.volume;
+            } else {
+                audio.muted = true;
+                volumeMute.innerHTML = '&#128264;';
+                volume.style.width = '0%';
+            }
+        }
+
+        function updatePlaylistUI() {
+            playlistItems.forEach((item, index) => {
+                item.classList.remove('active');
+                if (index === currentIndex) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // Event listeners
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                pauseSong();
+            } else {
+                playSong();
+            }
+        });
+
+        nextBtn.addEventListener('click', nextSong);
+        prevBtn.addEventListener('click', prevSong);
+
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('ended', () => {
+            if (autoplayToggle.checked) {
+                nextSong();
+            } else {
+                pauseSong();
+            }
+        });
+
+        progressBar.addEventListener('click', setProgress);
+        volumeSlider.addEventListener('click', setVolume);
+
+        volumeMute.addEventListener('click', toggleMute);
+
+        playlistItems.forEach((item, index) => {
+            item.addEventListener('click', () => {
+                currentIndex = parseInt(item.getAttribute('data-index'));
+                loadSong(currentIndex);
+                if (isPlaying) playSong();
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (isPlaying) {
+                    pauseSong();
+                } else {
+                    playSong();
+                }
+            } else if (e.code === 'ArrowRight') {
+                nextSong();
+            } else if (e.code === 'ArrowLeft') {
+                prevSong();
+            } else if (e.code === 'KeyM') {
+                toggleMute();
+            }
+        });
+
+        // Initialize
+        loadSong(0);
+    </script>
+</body>
+</html>
+</content>
+</create_file>
